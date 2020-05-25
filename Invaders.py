@@ -16,12 +16,10 @@ ssImage = ssImage.convert()
 laserImg = pygame.image.load("Images/laser_bullet.png")
 laserImg = laserImg.convert()
 
-lasers = []
+#loading alien Image
+alienImg = pygame.image.load("Images/alien_ship.png")
+alienImg = alienImg.convert()
 
-#creating reload event
-RELOAD_SPEED = 450
-reloaded_event = pygame.USEREVENT + 1
-reloaded = True
 
 class Laser:
     def __init__(self, width, height, x, y):
@@ -63,6 +61,17 @@ class Player:
                 reloaded = False
                 pygame.time.set_timer(reloaded_event, RELOAD_SPEED)
 
+class Alien:
+    def __init__(self, width, height, x, y):
+        self.width = width
+        self.height = height
+        self.x = x
+        self.y = y
+        self.velocity = 2
+
+    def draw(self, screen):
+        screen.blit(alienImg, (self.x, self.y))
+
 
 #framerate clock
 clock = pygame.time.Clock()
@@ -70,10 +79,29 @@ clock = pygame.time.Clock()
 #initializing Player
 spaceship = Player(64, 64, int(screenWidth / 2), int(screenHeight - 64))
 
+#initializing aliens
+aliens = []
+aliensInRow = (screenWidth // 64) - 2
+numRows = 5
+
+#A single row of aliens
+for i in range(aliensInRow):
+    aliens.append(Alien(64, 64, (64 * i+1), 0))
+
+lasers = []
+
+#creating reload event
+RELOAD_SPEED = 450
+reloaded_event = pygame.USEREVENT + 1
+reloaded = True
+
 #image draw
 def redrawGameWindow():
     screen.fill((0,0,0))
     spaceship.draw(screen)
+
+    for alien in aliens:
+        alien.draw(screen)
 
     for laser in lasers:
         laser.draw(screen)
