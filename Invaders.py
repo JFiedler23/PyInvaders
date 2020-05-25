@@ -16,7 +16,14 @@ ssImage = ssImage.convert()
 laserImg = pygame.image.load("Images/laser_bullet.png")
 laserImg = laserImg.convert()
 
-class Laser(object):
+lasers = []
+
+#creating reload event
+RELOAD_SPEED = 450
+reloaded_event = pygame.USEREVENT + 1
+reloaded = True
+
+class Laser:
     def __init__(self, width, height, x, y):
         self.width = width
         self.height = height
@@ -28,7 +35,7 @@ class Laser(object):
         screen.blit(laserImg, (self.x, self.y))
 
 
-class Player(object):
+class Player:
     def __init__(self, width, height, x, y):
         self.width = width
         self.height = height
@@ -39,6 +46,22 @@ class Player(object):
 
     def draw(self, screen):
         screen.blit(ssImage, (self.x, self.y))
+
+    def controller(self, screenWidth):
+        global reloaded
+        #Getting all key presses
+        keys = pygame.key.get_pressed()
+
+        #checking for player input
+        if keys[pygame.K_RIGHT] and self.x < (screenWidth - self.velocity - self.width + self.rightOffset):
+            self.x += self.velocity
+        if keys[pygame.K_LEFT] and spaceship.x > 0:
+            self.x -= self.velocity
+        if keys[pygame.K_SPACE]:
+            if reloaded:
+                lasers.append(Laser(32, 32, int(self.x + self.width // 4), int(self.y + self.height // 6)))
+                reloaded = False
+                pygame.time.set_timer(reloaded_event, RELOAD_SPEED)
 
 
 #framerate clock
@@ -56,13 +79,6 @@ def redrawGameWindow():
         laser.draw(screen)
 
     pygame.display.update()
-
-lasers = []
-
-#creating reload event
-RELOAD_SPEED = 450
-reloaded_event = pygame.USEREVENT + 1
-reloaded = True
 
 #main loop
 run = True
@@ -85,19 +101,7 @@ while run:
         else:
             lasers.pop(lasers.index(laser))
 
-    #Getting all key presses
-    keys = pygame.key.get_pressed()
-
-    #checking for player input
-    if keys[pygame.K_RIGHT] and spaceship.x < (screenWidth -spaceship.velocity - spaceship.width + spaceship.rightOffset):
-        spaceship.x += spaceship.velocity
-    if keys[pygame.K_LEFT] and spaceship.x > 0:
-        spaceship.x -= spaceship.velocity
-    if keys[pygame.K_SPACE]:
-        if reloaded:
-            lasers.append(Laser(32, 32, int(spaceship.x + spaceship.width // 4), int(spaceship.y + spaceship.height // 6)))
-            reloaded = False
-            pygame.time.set_timer(reloaded_event, RELOAD_SPEED)
+    spaceship.controller(screenWidth)
 
     redrawGameWindow()
 
