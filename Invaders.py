@@ -45,8 +45,7 @@ class Player:
     def draw(self, screen):
         screen.blit(ssImage, (self.x, self.y))
 
-    def controller(self, screenWidth):
-        global reloaded
+    def controller(self, screenWidth, reloaded):
         #Getting all key presses
         keys = pygame.key.get_pressed()
 
@@ -59,7 +58,7 @@ class Player:
             if reloaded:
                 lasers.append(Laser(32, 32, int(self.x + self.width // 4), int(self.y + self.height // 6)))
                 reloaded = False
-                pygame.time.set_timer(reloaded_event, RELOAD_SPEED)
+                pygame.time.set_timer(RELOADED_EVENT, RELOAD_SPEED)
 
 class Alien:
     def __init__(self, width, height, x, y):
@@ -77,33 +76,34 @@ class Alien:
 clock = pygame.time.Clock()
 
 #initializing Player
-spaceship = Player(64, 64, int(screenWidth / 2), int(screenHeight - 64))
+spaceship = Player(64, 64, (screenWidth // 2), (screenHeight - 64))
 
 #initializing aliens
 aliens = []
 aliensInRow = (screenWidth // 64) - 2
-numRows = 5
+numRows = 4
 
-#A single row of aliens
+#alien movement variables
+movingLeft = False
+movingRight = True
+
+#initializing all aliens
 for i in range(aliensInRow):
-    aliens.append(Alien(64, 64, (64 * i+1), 0))
+    for j in range(numRows):
+        aliens.append(Alien(64, 64, (64 * i+1), (64 * j)))
 
 lasers = []
 
 #creating reload event
 RELOAD_SPEED = 450
-reloaded_event = pygame.USEREVENT + 1
+RELOADED_EVENT = pygame.USEREVENT + 1
 reloaded = True
 
-<<<<<<< HEAD
 #creating alien movement event
-MOVE_SPEED = 1000
+MOVE_SPEED = 450
 ALIEN_MOVE_EVENT = pygame.USEREVENT + 2
 readyToMove = True
-pygame.time.set_timer(ALIEN_MOVE_EVENT, MOVE_SPEED)
 
-=======
->>>>>>> parent of 09b4d39... Alien movement
 #image draw
 def redrawGameWindow():
     screen.fill((0,0,0))
@@ -117,19 +117,25 @@ def redrawGameWindow():
 
     pygame.display.update()
 
+
 #main loop
 run = True
 while run:
+    largestX = 0
+    smallestX = 1000
     clock.tick(60)
 
     #Checking if game window has been closed
     if pygame.event.get(pygame.QUIT): run = False
 
-    #Checking if reload event has occured
+    #Checking for custom events
     for event in pygame.event.get():
-        if event.type == reloaded_event:
+        if event.type == RELOADED_EVENT:
             reloaded = True
-            pygame.time.set_timer(reloaded_event, 0)
+            pygame.time.set_timer(RELOADED_EVENT, 0)
+        elif event.type == ALIEN_MOVE_EVENT:
+            readyToMove = True
+            pygame.time.set_timer(ALIEN_MOVE_EVENT, 0)
 
     #laser manager
     for laser in lasers:
@@ -138,7 +144,28 @@ while run:
         else:
             lasers.pop(lasers.index(laser))
 
-    spaceship.controller(screenWidth)
+    for alien in aliens:
+        if alien.x > largestX:
+            largestX = alien.x
+
+        if alien.x < smallestX:
+            smallestX = alien.x
+
+    for alien in aliens:
+        if readyToMove:
+            if largestX+1 < (screenWidth - alien.width) and movingRight:
+                alien.x += alien.velocity
+            else:
+                movingLeft = True
+                movingRight = False
+
+            if smallestX > 0 and movingLeft:
+                alien.x -= alien.velocity
+            else:
+                movingLeft = False
+                movingRight = True
+
+    spaceship.controller(screenWidth, reloaded)
 
     redrawGameWindow()
 
