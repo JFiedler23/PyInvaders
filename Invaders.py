@@ -18,7 +18,7 @@ laserImg = laserImg.convert()
 
 #loading alien Image
 alienImg = pygame.image.load("Images/alien_ship.png")
-alienImg = alienImg.convert()
+alienRect = alienImg.get_rect()
 
 
 class Laser:
@@ -84,13 +84,12 @@ aliensInRow = (screenWidth // 64) - 2
 numRows = 4
 
 #alien movement variables
-movingLeft = False
-movingRight = True
+movingRight= True
 
 #initializing all aliens
 for i in range(aliensInRow):
     for j in range(numRows):
-        aliens.append(Alien(64, 64, (64 * i+1), (64 * j)))
+        aliens.append(alienRect)
 
 lasers = []
 
@@ -100,17 +99,18 @@ RELOADED_EVENT = pygame.USEREVENT + 1
 reloaded = True
 
 #creating alien movement event
-MOVE_SPEED = 200
+MOVE_SPEED = 1000
 ALIEN_MOVE_EVENT = pygame.USEREVENT + 2
 readyToMove = True
+pygame.time.set_timer(ALIEN_MOVE_EVENT, MOVE_SPEED)
 
 #image draw
 def redrawGameWindow():
     screen.fill((0,0,0))
     spaceship.draw(screen)
 
-    for alien in aliens:
-        alien.draw(screen)
+    for a in aliens:
+        screen.blit(alienImg, alienRect)
 
     for laser in lasers:
         laser.draw(screen)
@@ -121,8 +121,6 @@ def redrawGameWindow():
 #main loop
 run = True
 while run:
-    largestX = 0
-    smallestX = 1000
     clock.tick(60)
 
     #Checking if game window has been closed
@@ -134,8 +132,9 @@ while run:
             reloaded = True
             pygame.time.set_timer(RELOADED_EVENT, 0)
         elif event.type == ALIEN_MOVE_EVENT:
-            readyToMove = True
-            pygame.time.set_timer(ALIEN_MOVE_EVENT, 0)
+            for a in aliens:
+                a.move_ip((2 if movingRight else -2, 0))
+            movingRight = not movingRight
 
     #laser manager
     for laser in lasers:
@@ -143,27 +142,6 @@ while run:
             laser.y -= laser.velocity
         else:
             lasers.pop(lasers.index(laser))
-
-    for alien in aliens:
-        if alien.x > largestX:
-            largestX = alien.x
-
-        if alien.x < smallestX:
-            smallestX = alien.x
-
-    for alien in aliens:
-        if readyToMove:
-            if largestX+1 < (screenWidth - alien.width) and movingRight:
-                alien.x += alien.velocity
-            else:
-                movingLeft = True
-                movingRight = False
-
-            if smallestX > 0 and movingLeft:
-                alien.x -= alien.velocity
-            else:
-                movingLeft = False
-                movingRight = True
 
 
     spaceship.controller(screenWidth, reloaded)
