@@ -7,7 +7,7 @@ screenSize = screenWidth, screenHeight = 640, 480
 screen = pygame.display.set_mode(screenSize)
 pygame.display.set_caption("Invaders!")
 
-#loading spaceship image
+#loading player image
 ssImage = pygame.image.load("Images/spaceship.png")
 pygame.display.set_icon(ssImage)
 ssImage = ssImage.convert()
@@ -45,20 +45,18 @@ class Player:
     def draw(self, screen):
         screen.blit(ssImage, (self.x, self.y))
 
-    def controller(self, screenWidth, reloaded):
-        #Getting all key presses
-        keys = pygame.key.get_pressed()
-
+    def controller(self, screenWidth, reloaded, keys):
         #checking for player input
         if keys[pygame.K_RIGHT] and self.x < (screenWidth - self.velocity - self.width + self.rightOffset):
             self.x += self.velocity
-        if keys[pygame.K_LEFT] and spaceship.x > 0:
+        if keys[pygame.K_LEFT] and player.x > 0:
             self.x -= self.velocity
+
+    def shoot(self, keys):
         if keys[pygame.K_SPACE]:
-            if reloaded:
-                lasers.append(Laser(32, 32, int(self.x + self.width // 4), int(self.y + self.height // 6)))
-                reloaded = False
-                pygame.time.set_timer(RELOADED_EVENT, RELOAD_SPEED)
+            lasers.append(Laser(32, 32, int(self.x + self.width // 4), int(self.y + self.height // 6)))
+            reloaded = False
+
 
 class Alien:
     def __init__(self, width, height, x, y):
@@ -76,15 +74,14 @@ class Alien:
 clock = pygame.time.Clock()
 
 #initializing Player
-spaceship = Player(64, 64, (screenWidth // 2), (screenHeight - 64))
+player = Player(64, 64, (screenWidth // 2), (screenHeight - 64))
 
 #initializing aliens
 aliens = []
 aliensInRow = (screenWidth // 64) - 2
 numRows = 4
 
-#alien movement variables
-movingLeft = False
+#alien movement direction
 movingRight = True
 
 #initializing all aliens
@@ -98,6 +95,7 @@ lasers = []
 RELOAD_SPEED = 450
 RELOADED_EVENT = pygame.USEREVENT + 1
 reloaded = True
+pygame.time.set_timer(RELOADED_EVENT, RELOAD_SPEED)
 
 #creating alien movement event
 MOVE_SPEED = 850
@@ -107,7 +105,7 @@ pygame.time.set_timer(ALIEN_MOVE_EVENT, MOVE_SPEED)
 #image draw
 def redrawGameWindow():
     screen.fill((0,0,0))
-    spaceship.draw(screen)
+    player.draw(screen)
 
     for alien in aliens:
         alien.draw(screen)
@@ -117,6 +115,12 @@ def redrawGameWindow():
 
     pygame.display.update()
 
+def manageLasers():
+    for laser in lasers:
+        if laser.y > 0 and laser.y < 480:
+            laser.y -= laser.velocity
+        else:
+            lasers.pop(lasers.index(laser))
 
 #main loop
 run = True
@@ -125,15 +129,20 @@ while run:
     smallestX = 1000
     clock.tick(60)
 
+    #Getting all key presses
+    keys = pygame.key.get_pressed()
+
     #Checking if game window has been closed
     if pygame.event.get(pygame.QUIT): run = False
 
     #Checking for custom events
     for event in pygame.event.get():
+        #player reload event
         if event.type == RELOADED_EVENT:
-            reloaded = True
-            pygame.time.set_timer(RELOADED_EVENT, 0)
+            player.shoot(keys)
+        #Alien movement
         if event.type == ALIEN_MOVE_EVENT:
+            #Keeping track of smallest and largest x values
             for alien in aliens:
                 if alien.x > largestX:
                     largestX = alien.x
@@ -146,26 +155,19 @@ while run:
                 if largestX+1 < (screenWidth - alien.width - alien.moveDistance) and movingRight:
                     alien.x += alien.moveDistance
                 else:
-                    movingLeft = True
                     movingRight = False
 
                 #moving left
-                if smallestX > alien.moveDistance and movingLeft:
+                if smallestX > alien.moveDistance and not movingRight:
                     alien.x -= alien.moveDistance
                 else:
-                    movingLeft = False
                     movingRight = True
 
     #laser manager
-    for laser in lasers:
-        if laser.y > 0 and laser.y < 480:
-            laser.y -= laser.velocity
-        else:
-            lasers.pop(lasers.index(laser))
+    manageLasers()
 
-
-
-    spaceship.controller(screenWidth, reloaded)
+    #player controller
+    player.controller(screenWidth, reloaded, keys)
 
     redrawGameWindow()
 
