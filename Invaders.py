@@ -18,7 +18,7 @@ laserImg = laserImg.convert()
 
 #loading alien Image
 alienImg = pygame.image.load("Images/alien_ship.png")
-alienRect = alienImg.get_rect()
+alienImg = alienImg.convert()
 
 
 class Laser:
@@ -84,12 +84,13 @@ aliensInRow = (screenWidth // 64) - 2
 numRows = 4
 
 #alien movement variables
-movingRight= True
+movingLeft = False
+movingRight = True
 
 #initializing all aliens
 for i in range(aliensInRow):
     for j in range(numRows):
-        aliens.append(alienRect)
+        aliens.append(Alien(64, 64, (64 * i+1), (64 * j)))
 
 lasers = []
 
@@ -109,8 +110,8 @@ def redrawGameWindow():
     screen.fill((0,0,0))
     spaceship.draw(screen)
 
-    for a in aliens:
-        screen.blit(alienImg, alienRect)
+    for alien in aliens:
+        alien.draw(screen)
 
     for laser in lasers:
         laser.draw(screen)
@@ -121,6 +122,8 @@ def redrawGameWindow():
 #main loop
 run = True
 while run:
+    largestX = 0
+    smallestX = 1000
     clock.tick(60)
 
     #Checking if game window has been closed
@@ -132,9 +135,8 @@ while run:
             reloaded = True
             pygame.time.set_timer(RELOADED_EVENT, 0)
         elif event.type == ALIEN_MOVE_EVENT:
-            for a in aliens:
-                a.move_ip((2 if movingRight else -2, 0))
-            movingRight = not movingRight
+            readyToMove = True
+            pygame.time.set_timer(ALIEN_MOVE_EVENT, 0)
 
     #laser manager
     for laser in lasers:
@@ -142,6 +144,27 @@ while run:
             laser.y -= laser.velocity
         else:
             lasers.pop(lasers.index(laser))
+
+    for alien in aliens:
+        if alien.x > largestX:
+            largestX = alien.x
+
+        if alien.x < smallestX:
+            smallestX = alien.x
+
+    for alien in aliens:
+        if readyToMove:
+            if largestX+1 < (screenWidth - alien.width) and movingRight:
+                alien.x += alien.velocity
+            else:
+                movingLeft = True
+                movingRight = False
+
+            if smallestX > 0 and movingLeft:
+                alien.x -= alien.velocity
+            else:
+                movingLeft = False
+                movingRight = True
 
 
     spaceship.controller(screenWidth, reloaded)
