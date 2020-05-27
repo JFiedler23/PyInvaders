@@ -28,9 +28,12 @@ class Laser:
         self.x = x
         self.y = y
         self.velocity = 5
+        self.hitbox = (self.x + 9, self.y, 8, 32)
 
     def draw(self, screen):
+        self.hitbox = (self.x + 9, self.y, 8, 32)
         screen.blit(laserImg, (self.x, self.y))
+        pygame.draw.rect(screen, (255, 0, 0), self.hitbox, 2)
 
 
 class Player:
@@ -41,9 +44,12 @@ class Player:
         self.y = y
         self.rightOffset = 5
         self.velocity = 5
+        self.hitbox = (self.x, self.y + 32, 64, 32)
 
     def draw(self, screen):
         screen.blit(ssImage, (self.x, self.y))
+        self.hitbox = (self.x, self.y + 32, 64, 32)
+        pygame.draw.rect(screen, (255, 0 ,0), self.hitbox, 2)
 
     def controller(self, screenWidth, reloaded, keys):
         #checking for player input
@@ -64,11 +70,16 @@ class Alien:
         self.height = height
         self.x = x
         self.y = y
-        self.moveDistance = 10
+        self.moveDistance = 20
+        self.hitbox = (self.x, self.y + 32, 64, 32)
 
     def draw(self, screen):
+        self.hitbox = (self.x, self.y + 32, 64, 32)
         screen.blit(alienImg, (self.x, self.y))
+        pygame.draw.rect(screen, (255, 0, 0), self.hitbox, 2)
 
+    def hit(self):
+        print("hit")
 
 #framerate clock
 clock = pygame.time.Clock()
@@ -83,11 +94,12 @@ numRows = 4
 
 #alien movement direction
 movingRight = True
+canMoveDown = False
 
 #initializing all aliens
 for i in range(aliensInRow):
     for j in range(numRows):
-        aliens.append(Alien(64, 64, (64 * i+1), (64 * j)))
+        aliens.append(Alien(64, 64, (70 * i+1), (64 * j)))
 
 lasers = []
 
@@ -117,6 +129,19 @@ def redrawGameWindow():
 
 def manageLasers():
     for laser in lasers:
+        for alien in aliens:
+            if (laser.hitbox[1]) < (alien.hitbox[1] + alien.hitbox[3]) and (laser.hitbox[1] + laser.hitbox[3]) > alien.hitbox[2]:
+                if (laser.hitbox[0] - laser.hitbox[2]) < (alien.hitbox[0] + alien.hitbox[2]) and (laser.hitbox[0] + laser.hitbox[2]) > alien.hitbox[0]:
+                    aliens.pop(aliens.index(alien))
+
+                    #just in case two aliens are hit at once
+                    try:
+                        lasers.pop(lasers.index(laser))
+                    except ValueError:
+                        continue
+
+
+
         if laser.y > 0 and laser.y < 480:
             laser.y -= laser.velocity
         else:
@@ -125,8 +150,10 @@ def manageLasers():
 #main loop
 run = True
 while run:
+
     largestX = 0
     smallestX = 1000
+
     clock.tick(60)
 
     #Getting all key presses
@@ -140,6 +167,7 @@ while run:
         #player reload event
         if event.type == RELOADED_EVENT:
             player.shoot(keys)
+
         #Alien movement
         if event.type == ALIEN_MOVE_EVENT:
             #Keeping track of smallest and largest x values
@@ -154,6 +182,9 @@ while run:
                 #moving right
                 if largestX+1 < (screenWidth - alien.width - alien.moveDistance) and movingRight:
                     alien.x += alien.moveDistance
+                #Moving down when right edge of screen is reached
+                elif largestX+5 == (screenWidth - alien.width - alien.moveDistance):
+                    alien.y += alien.moveDistance
                 else:
                     movingRight = False
 
