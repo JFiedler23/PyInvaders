@@ -51,7 +51,7 @@ class Player:
         self.hitbox = (self.x, self.y + 32, 64, 32)
         pygame.draw.rect(screen, (255, 0 ,0), self.hitbox, 2)
 
-    def controller(self, screenWidth, reloaded, keys):
+    def controller(self, screenWidth, keys):
         #checking for player input
         if keys[pygame.K_RIGHT] and self.x < (screenWidth - self.velocity - self.width + self.rightOffset):
             self.x += self.velocity
@@ -104,13 +104,13 @@ lasers = []
 numAliens = len(aliens)
 
 #creating reload event
-RELOAD_SPEED = 200
+RELOAD_SPEED = 350
 RELOADED_EVENT = pygame.USEREVENT + 1
 reloaded = True
 pygame.time.set_timer(RELOADED_EVENT, RELOAD_SPEED)
 
 #creating alien movement event
-move_speed = 850
+move_speed = 200
 ALIEN_MOVE_EVENT = pygame.USEREVENT + 2
 pygame.time.set_timer(ALIEN_MOVE_EVENT, move_speed)
 
@@ -144,6 +144,13 @@ def manageLasers(move_speed):
             laser.y -= laser.velocity
         else:
             lasers.pop(lasers.index(laser))
+
+def playerDestory():
+    #checking for alien-player collision
+    for alien in aliens:
+        if (player.hitbox[1] < alien.hitbox[1] + alien.hitbox[3]) and (player.hitbox[1] + player.hitbox[3] > alien.hitbox[1]):
+            if (player.hitbox[0] < alien.hitbox[0] + alien.hitbox[2]) and (player.hitbox[0] + player.hitbox[2] > alien.hitbox[0]):
+                return True
 
 #main loop
 run = True
@@ -192,12 +199,17 @@ while run:
                 else:
                     movingRight = True
 
+
+    if playerDestory():
+        run = False
+
     #laser manager
     manageLasers(move_speed)
 
     #player controller
-    player.controller(screenWidth, reloaded, keys)
+    player.controller(screenWidth, keys)
 
     redrawGameWindow()
 
+print("GAME OVER")
 pygame.quit()
