@@ -1,6 +1,9 @@
 import pygame
 import sys
 import random
+from player import *
+from laser import *
+from alien import *
 
 pygame.init()
 
@@ -72,8 +75,6 @@ def GameOver():
         screen.blit(gameOverText, (210, 20))
         pygame.display.update()
 
-
-
 #<----------GAME---------->
 def game():
     #loading player image
@@ -105,71 +106,10 @@ def game():
     ALIEN_SHOOT_EVENT = pygame.USEREVENT + 3
     pygame.time.set_timer(ALIEN_SHOOT_EVENT, ALIEN_SHOOT_SPEED)
 
-
-    #<----------GAME OBJECT CLASSES---------->
-    class Laser:
-        def __init__(self, width, height, x, y):
-            self.width = width
-            self.height = height
-            self.x = x
-            self.y = y
-            self.velocity = 5
-            self.hitbox = (self.x + 9, self.y, 8, 32)
-
-        def draw(self, screen):
-            self.hitbox = (self.x + 9, self.y, 8, 32)
-            screen.blit(laserImg, (self.x, self.y))
-            #pygame.draw.rect(screen, (255, 0, 0), self.hitbox, 2)
-
-
-    class Player:
-        def __init__(self, width, height, x, y):
-            self.width = width
-            self.height = height
-            self.x = x
-            self.y = y
-            self.rightOffset = 5
-            self.velocity = 2
-            self.hitbox = (self.x, self.y + 32, 64, 32)
-
-        def draw(self, screen):
-            screen.blit(ssImage, (self.x, self.y))
-            self.hitbox = (self.x, self.y + 32, 64, 32)
-            #pygame.draw.rect(screen, (255, 0 ,0), self.hitbox, 2)
-
-        def controller(self, screenWidth, keys):
-            #checking for player input
-            if keys[pygame.K_RIGHT] and self.x < (screenWidth - self.velocity - self.width + self.rightOffset):
-                self.x += self.velocity
-            if keys[pygame.K_LEFT] and player.x > 0:
-                self.x -= self.velocity
-
-        def shoot(self, keys):
-            if keys[pygame.K_SPACE] and len(playerLasers) < 3:
-                playerLasers.append(Laser(32, 32, int(self.x + self.width // 4), int(self.y + self.height // 6)))
-
-
-    class Alien:
-        def __init__(self, width, height, x, y):
-            self.width = width
-            self.height = height
-            self.x = x
-            self.y = y
-            self.moveDistance = 20
-            self.hitbox = (self.x, self.y + 32, 64, 32)
-
-        def draw(self, screen):
-            self.hitbox = (self.x, self.y + 32, 64, 32)
-            screen.blit(alienImg, (self.x, self.y))
-            #pygame.draw.rect(screen, (255, 0, 0), self.hitbox, 2)
-
-        def shoot(self):
-            alienLasers.append(Laser(32, 32, self.x + self.width // 4, self.y + self.height // 6))
-
     #<----------INITIALIZING GAME OBJECTS---------->
 
     #initializing Player
-    player = Player(64, 64, (screenWidth // 2), (screenHeight - 64))
+    mainPlayer = Player(64, 64, (screenWidth // 2), (screenHeight - 64))
 
     #alien initialization variables
     aliens = []
@@ -183,7 +123,6 @@ def game():
 
 
     #<----------GAMEPLAY FUNCTIONS---------->
-
     #image draw
     def redrawGameWindow():
         screen.fill((0,0,0))
@@ -191,24 +130,24 @@ def game():
         scoreText = gameFont.render("Score: "+ str(score), 1, (255,255,255))
         screen.blit(scoreText, (480, 10))
 
-        player.draw(screen)
+        mainPlayer.draw(screen, ssImage)
 
         for alien in aliens:
-            alien.draw(screen)
+            alien.draw(screen, alienImg)
 
         for laser in playerLasers:
-            laser.draw(screen)
+            laser.draw(screen, laserImg)
 
         for laser in alienLasers:
-            laser.draw(screen)
+            laser.draw(screen, laserImg)
 
         pygame.display.update()
 
     def playerDestory():
         #checking for alien-player collision
         for alien in aliens:
-            if (player.hitbox[1] < alien.hitbox[1] + alien.hitbox[3]) and (player.hitbox[1] + player.hitbox[3] > alien.hitbox[1]):
-                if (player.hitbox[0] < alien.hitbox[0] + alien.hitbox[2]) and (player.hitbox[0] + player.hitbox[2] > alien.hitbox[0]):
+            if (mainPlayer.hitbox[1] < alien.hitbox[1] + alien.hitbox[3]) and (mainPlayer.hitbox[1] + mainPlayer.hitbox[3] > alien.hitbox[1]):
+                if (mainPlayer.hitbox[0] < alien.hitbox[0] + alien.hitbox[2]) and (mainPlayer.hitbox[0] + mainPlayer.hitbox[2] > alien.hitbox[0]):
                     return True
 
     #<----------GAMEPLAY VARIABLES---------->
@@ -235,7 +174,7 @@ def game():
                 sys.exit()
             #player reload event
             if event.type == RELOADED_EVENT:
-                player.shoot(keys)
+                mainPlayer.shoot(keys, playerLasers)
 
             #Alien movement
             if event.type == ALIEN_MOVE_EVENT:
@@ -268,7 +207,7 @@ def game():
             if event.type == ALIEN_SHOOT_EVENT:
                 if len(aliens) > 0:
                     choice = random.randint(0, len(aliens)-1)
-                    aliens[choice].shoot()
+                    aliens[choice].shoot(alienLasers)
 
         if playerDestory():
             run = False
@@ -297,8 +236,8 @@ def game():
         #Alien laser manager
         for laser in alienLasers:
             #checking if player has been hit
-            if (laser.hitbox[1] < player.hitbox[1] + player.hitbox[3]) and (laser.hitbox[1] + laser.hitbox[3] > player.hitbox[1]):
-                if (laser.hitbox[0] - laser.hitbox[2] < player.hitbox[0] + player.hitbox[2]) and (laser.hitbox[0] + laser.hitbox[2] > player.hitbox[0]):
+            if (laser.hitbox[1] < mainPlayer.hitbox[1] + mainPlayer.hitbox[3]) and (laser.hitbox[1] + laser.hitbox[3] > mainPlayer.hitbox[1]):
+                if (laser.hitbox[0] - laser.hitbox[2] < mainPlayer.hitbox[0] + mainPlayer.hitbox[2]) and (laser.hitbox[0] + laser.hitbox[2] > mainPlayer.hitbox[0]):
                     run = False
                     GameOver()
 
@@ -308,7 +247,7 @@ def game():
                 alienLasers.pop(alienLasers.index(laser))
 
         #player controller
-        player.controller(screenWidth, keys)
+        mainPlayer.controller(screenWidth, keys)
 
         redrawGameWindow()
 
