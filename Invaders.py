@@ -1,6 +1,7 @@
 import pygame
 import sys
 import main_menu
+import random
 
 pygame.init()
 
@@ -67,7 +68,7 @@ def game():
     alienImg = pygame.image.load("Images/alien_ship.png")
     alienImg = alienImg.convert()
 
-    #creating reload event
+    #creating player shoot event
     RELOAD_SPEED = 350
     RELOADED_EVENT = pygame.USEREVENT + 1
     reloaded = True
@@ -77,6 +78,11 @@ def game():
     move_speed = 850
     ALIEN_MOVE_EVENT = pygame.USEREVENT + 2
     pygame.time.set_timer(ALIEN_MOVE_EVENT, move_speed)
+
+    #creating alien shoot event
+    ALIEN_SHOOT_SPEED = 900
+    ALIEN_SHOOT_EVENT = pygame.USEREVENT + 3
+    pygame.time.set_timer(ALIEN_SHOOT_EVENT, ALIEN_SHOOT_SPEED)
 
 
     #<----------BEGIN: SECTION 2---------->
@@ -120,8 +126,8 @@ def game():
                 self.x -= self.velocity
 
         def shoot(self, keys):
-            if keys[pygame.K_SPACE] and len(lasers) < 3:
-                lasers.append(Laser(32, 32, int(self.x + self.width // 4), int(self.y + self.height // 6)))
+            if keys[pygame.K_SPACE] and len(playerLasers) < 3:
+                playerLasers.append(Laser(32, 32, int(self.x + self.width // 4), int(self.y + self.height // 6)))
 
 
     class Alien:
@@ -137,6 +143,9 @@ def game():
             self.hitbox = (self.x, self.y + 32, 64, 32)
             screen.blit(alienImg, (self.x, self.y))
             #pygame.draw.rect(screen, (255, 0, 0), self.hitbox, 2)
+
+        def shoot(self):
+            alienLasers.append(Laser(32, 32, self.x + self.width // 4, self.y + self.height // 6))
 
     #<----------BEGIN: SECTION 3---------->
     #<----------INITIALIZING GAME OBJECTS---------->
@@ -170,7 +179,10 @@ def game():
         for alien in aliens:
             alien.draw(screen)
 
-        for laser in lasers:
+        for laser in playerLasers:
+            laser.draw(screen)
+
+        for laser in alienLasers:
             laser.draw(screen)
 
         pygame.display.update()
@@ -186,7 +198,8 @@ def game():
     run = True
     movingRight = True #alien movement direction
     score = 0
-    lasers = []
+    playerLasers = []
+    alienLasers = []
     numAliens = len(aliens)
 
     while run:
@@ -219,7 +232,7 @@ def game():
                 #Checking boundaries
                 for alien in aliens:
                     #moving right
-                    if largestX+1 < (screenWidth - alien.width - alien.moveDistance) and movingRight:
+                    if largestX < (screenWidth - alien.width - alien.moveDistance) and movingRight:
                         alien.x += alien.moveDistance
                     #Moving down when right edge of screen is reached
                     elif largestX+5 == (screenWidth - alien.width - alien.moveDistance):
@@ -228,32 +241,49 @@ def game():
                         movingRight = False
 
                     #moving left
-                    if smallestX > alien.moveDistance and not movingRight:
+                    if smallestX >= alien.moveDistance and not movingRight:
                         alien.x -= alien.moveDistance
                     else:
                         movingRight = True
 
+            if event.type == ALIEN_SHOOT_EVENT:
+                if len(aliens) > 0:
+                    choice = random.randint(0, len(aliens)-1)
+                    aliens[choice].shoot()
 
         if playerDestory(): run = False
 
-        #laser manager
-        for laser in lasers:
+        #Player laser manager
+        for laser in playerLasers:
+            #Checking if an alien has been hit
             for alien in aliens:
-                if (laser.hitbox[1]) < (alien.hitbox[1] + alien.hitbox[3]) and (laser.hitbox[1] + laser.hitbox[3]) > alien.hitbox[2]:
+                if (laser.hitbox[1]) < (alien.hitbox[1] + alien.hitbox[3]) and (laser.hitbox[1] + laser.hitbox[3]) > alien.hitbox[1]:
                     if (laser.hitbox[0] - laser.hitbox[2]) < (alien.hitbox[0] + alien.hitbox[2]) and (laser.hitbox[0] + laser.hitbox[2]) > alien.hitbox[0]:
                         score += 100
                         aliens.pop(aliens.index(alien))
 
                         #just in case two aliens are hit at once
                         try:
-                            lasers.pop(lasers.index(laser))
+                            playerLasers.pop(playerLasers.index(laser))
                         except ValueError:
                             continue
 
-            if laser.y > 0 and laser.y < 480:
+            if laser.y > 0 and laser.y < screenHeight:
                 laser.y -= laser.velocity
             else:
-                lasers.pop(lasers.index(laser))
+                playerLasers.pop(playerLasers.index(laser))
+
+        #Alien laser manager
+        for laser in alienLasers:
+            #checking if player has been hit
+            if (laser.hitbox[1] < player.hitbox[1] + player.hitbox[3]) and (laser.hitbox[1] + laser.hitbox[3] > player.hitbox[1]):
+                if (laser.hitbox[0] - laser.hitbox[2] < player.hitbox[0] + player.hitbox[2]) and (laser.hitbox[0] + laser.hitbox[2] > player.hitbox[0]):
+                    run = False
+
+            if laser.y < screenHeight and laser.y > 0:
+                laser.y += laser.velocity
+            else:
+                alienLasers.pop(alienLasers.index(laser))
 
         #player controller
         player.controller(screenWidth, keys)
