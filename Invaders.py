@@ -1,11 +1,9 @@
 import pygame
 import sys
-import main_menu
 import random
 
 pygame.init()
 
-#<----------BEGIN: SECTION 1---------->
 #<----------PYGAME SPECIFIC OBJECTS---------->
 
 #basic screen setup
@@ -19,7 +17,7 @@ gameFont = pygame.font.Font('Atari.ttf', 28)
 #framerate clock
 clock = pygame.time.Clock()
 
-#Main menu
+#<----------Main Menu---------->
 def MainMenu():
     startButton = pygame.Rect(190, 200, 256, 64)
     font = pygame.font.Font("SPACEBAR.ttf", 32)
@@ -30,7 +28,6 @@ def MainMenu():
         titleText = font.render("INVADERS", 1, (255,255,255))
         buttonText= font.render("Start", 1, (0,0,0))
 
-        click = False
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -52,7 +49,31 @@ def MainMenu():
         screen.blit(buttonText, (250, 210))
         pygame.display.update()
 
-#<----------BEGIN: SECTION 5---------->
+#<----------GAME OVER SCREEN---------->
+def GameOver():
+    font = pygame.font.Font("SPACEBAR.ttf", 32)
+
+    while True:
+        clock.tick(60)
+
+        gameOverText = font.render("GAME OVER", 1, (255,255,255))
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
+
+        screen.fill((0,0,0))
+        screen.blit(gameOverText, (210, 20))
+        pygame.display.update()
+
+
+
 #<----------GAME---------->
 def game():
     #loading player image
@@ -85,9 +106,7 @@ def game():
     pygame.time.set_timer(ALIEN_SHOOT_EVENT, ALIEN_SHOOT_SPEED)
 
 
-    #<----------BEGIN: SECTION 2---------->
     #<----------GAME OBJECT CLASSES---------->
-
     class Laser:
         def __init__(self, width, height, x, y):
             self.width = width
@@ -147,7 +166,6 @@ def game():
         def shoot(self):
             alienLasers.append(Laser(32, 32, self.x + self.width // 4, self.y + self.height // 6))
 
-    #<----------BEGIN: SECTION 3---------->
     #<----------INITIALIZING GAME OBJECTS---------->
 
     #initializing Player
@@ -164,7 +182,6 @@ def game():
             aliens.append(Alien(64, 64, (70 * i+1), (64 * j)+40))
 
 
-    #<----------BEGIN: SECTION 4---------->
     #<----------GAMEPLAY FUNCTIONS---------->
 
     #image draw
@@ -194,7 +211,7 @@ def game():
                 if (player.hitbox[0] < alien.hitbox[0] + alien.hitbox[2]) and (player.hitbox[0] + player.hitbox[2] > alien.hitbox[0]):
                     return True
 
-
+    #<----------GAMEPLAY VARIABLES---------->
     run = True
     movingRight = True #alien movement direction
     score = 0
@@ -202,6 +219,7 @@ def game():
     alienLasers = []
     numAliens = len(aliens)
 
+    #<----------GAME LOOP---------->
     while run:
         largestX = 0
         smallestX = 1000
@@ -246,12 +264,15 @@ def game():
                     else:
                         movingRight = True
 
+            #Alien shooting
             if event.type == ALIEN_SHOOT_EVENT:
                 if len(aliens) > 0:
                     choice = random.randint(0, len(aliens)-1)
                     aliens[choice].shoot()
 
-        if playerDestory(): run = False
+        if playerDestory():
+            run = False
+            GameOver()
 
         #Player laser manager
         for laser in playerLasers:
@@ -279,6 +300,7 @@ def game():
             if (laser.hitbox[1] < player.hitbox[1] + player.hitbox[3]) and (laser.hitbox[1] + laser.hitbox[3] > player.hitbox[1]):
                 if (laser.hitbox[0] - laser.hitbox[2] < player.hitbox[0] + player.hitbox[2]) and (laser.hitbox[0] + laser.hitbox[2] > player.hitbox[0]):
                     run = False
+                    GameOver()
 
             if laser.y < screenHeight and laser.y > 0:
                 laser.y += laser.velocity
