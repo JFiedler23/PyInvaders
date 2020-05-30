@@ -1,11 +1,13 @@
 import pygame
 import sys
+import os
 import random
 from player import *
 from laser import *
 from alien import *
 
 pygame.init()
+my_path = os.path.abspath(os.path.dirname(__file__))
 
 #<----------PYGAME SPECIFIC OBJECTS---------->
 
@@ -15,15 +17,22 @@ screen = pygame.display.set_mode(screenSize)
 pygame.display.set_caption("Invaders!")
 
 #creating font
-gameFont = pygame.font.Font('Atari.ttf', 28)
+game_font_path = os.path.join(my_path, '../Fonts/Atari.ttf')
+gameFont = pygame.font.Font(game_font_path, 28)
 
 #framerate clock
 clock = pygame.time.Clock()
 
 #<----------Main Menu---------->
 def MainMenu():
+    icon_path = os.path.join(my_path, '../Images/icon.png')
+    icon = pygame.image.load(icon_path)
+    pygame.display.set_icon(icon)
+
     startButton = pygame.Rect(190, 200, 256, 64)
-    font = pygame.font.Font("SPACEBAR.ttf", 32)
+
+    title_font_path = os.path.join(my_path, "../Fonts/SPACEBAR.ttf")
+    font = pygame.font.Font(title_font_path, 32)
     clock.tick(60)
 
     while True:
@@ -54,7 +63,8 @@ def MainMenu():
 
 #<----------GAME OVER SCREEN---------->
 def GameOver():
-    font = pygame.font.Font("SPACEBAR.ttf", 32)
+    title_font_path = os.path.join(my_path, "../Fonts/SPACEBAR.ttf")
+    font = pygame.font.Font(title_font_path, 32)
 
     while True:
         clock.tick(60)
@@ -78,16 +88,18 @@ def GameOver():
 #<----------GAME---------->
 def game():
     #loading player image
-    ssImage = pygame.image.load("Images/spaceship.png")
-    pygame.display.set_icon(ssImage)
+    spaceship_path = os.path.join(my_path, "../Images/spaceship.png")
+    ssImage = pygame.image.load(spaceship_path)
     ssImage = ssImage.convert()
 
     #loading laser image
-    laserImg = pygame.image.load("Images/laser_bullet.png")
+    laser_path = os.path.join(my_path, "../Images/laser_bullet.png")
+    laserImg = pygame.image.load(laser_path)
     laserImg = laserImg.convert()
 
     #loading alien Image
-    alienImg = pygame.image.load("Images/alien_ship.png")
+    alien_path = os.path.join(my_path, "../Images/alien_ship.png")
+    alienImg = pygame.image.load(alien_path)
     alienImg = alienImg.convert()
 
     #creating player shoot event
