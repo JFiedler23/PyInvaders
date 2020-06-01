@@ -102,6 +102,14 @@ def game():
     alienImg = pygame.image.load(alien_path)
     alienImg = alienImg.convert()
 
+    explosionImg = [pygame.image.load(os.path.join(my_path, "../Images/explosion_1.png")), \
+                    pygame.image.load(os.path.join(my_path, "../Images/explosion_2.png")), \
+                    pygame.image.load(os.path.join(my_path, "../Images/explosion_3.png")), \
+                    pygame.image.load(os.path.join(my_path, "../Images/explosion_4.png")), \
+                    pygame.image.load(os.path.join(my_path, "../Images/explosion_5.png")), \
+                    pygame.image.load(os.path.join(my_path, "../Images/explosion_6.png")), \
+                    pygame.image.load(os.path.join(my_path, "../Images/explosion_7.png"))]
+
     #creating player shoot event
     RELOAD_SPEED = 350
     RELOADED_EVENT = pygame.USEREVENT + 1
@@ -117,6 +125,11 @@ def game():
     ALIEN_SHOOT_SPEED = 900
     ALIEN_SHOOT_EVENT = pygame.USEREVENT + 3
     pygame.time.set_timer(ALIEN_SHOOT_EVENT, ALIEN_SHOOT_SPEED)
+
+    #explosion event
+    EXPLOSION_SPEED = 200
+    EXPLOSION_EVENT = pygame.USEREVENT + 4
+    pygame.time.set_timer(EXPLOSION_EVENT, EXPLOSION_SPEED)
 
     #<----------INITIALIZING GAME OBJECTS---------->
 
@@ -137,8 +150,6 @@ def game():
     #<----------GAMEPLAY FUNCTIONS---------->
     #image draw
     def redrawGameWindow():
-        screen.fill((0,0,0))
-
         scoreText = gameFont.render("Score: "+ str(score), 1, (255,255,255))
         screen.blit(scoreText, (480, 10))
 
@@ -153,8 +164,7 @@ def game():
         for laser in alienLasers:
             laser.draw(screen, laserImg)
 
-        pygame.display.update()
-
+            
     def playerDestory():
         #checking for alien-player collision
         for alien in aliens:
@@ -162,19 +172,24 @@ def game():
                 if (mainPlayer.hitbox[0] < alien.hitbox[0] + alien.hitbox[2]) and (mainPlayer.hitbox[0] + mainPlayer.hitbox[2] > alien.hitbox[0]):
                     return True
 
+
     #<----------GAMEPLAY VARIABLES---------->
     run = True
     movingRight = True #alien movement direction
     score = 0
+    animCount = 0
+    explosion = False
     playerLasers = []
     alienLasers = []
     numAliens = len(aliens)
 
     #<----------GAME LOOP---------->
     while run:
+        screen.fill((0,0,0))
+
         largestX = 0
         smallestX = 1000
-        clock.tick(60)
+        clock.tick(56)
 
         #Getting all key presses
         keys = pygame.key.get_pressed()
@@ -232,8 +247,10 @@ def game():
                 if (laser.hitbox[1]) < (alien.hitbox[1] + alien.hitbox[3]) and (laser.hitbox[1] + laser.hitbox[3]) > alien.hitbox[1]:
                     if (laser.hitbox[0] - laser.hitbox[2]) < (alien.hitbox[0] + alien.hitbox[2]) and (laser.hitbox[0] + laser.hitbox[2]) > alien.hitbox[0]:
                         score += 100
+                        tempX, tempY = alien.x, alien.y
                         aliens.pop(aliens.index(alien))
 
+                        explosion = True
                         #just in case two aliens are hit at once
                         try:
                             playerLasers.pop(playerLasers.index(laser))
@@ -261,6 +278,17 @@ def game():
         #player controller
         mainPlayer.controller(screenWidth, keys)
 
+        #explosion animation
+        if animCount + 1 >= 56:
+            animCount = 0
+            explosion = False
+
+        if explosion:
+            screen.blit(explosionImg[animCount//8], (tempX, tempY))
+            animCount += 1
+
         redrawGameWindow()
+
+        pygame.display.update()
 
 MainMenu()
