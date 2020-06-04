@@ -23,6 +23,7 @@ class Player:
         if keys[pygame.K_LEFT] and self.x > 0:
             self.x -= self.velocity
 
-    def shoot(self, keys, lasers):
+    def shoot(self, keys, lasers, sound):
         if keys[pygame.K_SPACE] and len(lasers) < 3:
             lasers.append(Laser(32, 32, int(self.x + self.width // 4), int(self.y + self.height // 6)))
+            sound.play()

@@ -15,5 +15,6 @@ class Alien:
         screen.blit(image, (self.x, self.y))
         #pygame.draw.rect(screen, (255, 0, 0), self.hitbox, 2)
 
-    def shoot(self, lasers):
+    def shoot(self, lasers, sound):
         lasers.append(Laser(32, 32, self.x + self.width // 4, self.y + self.height // 6))
+        sound.play()

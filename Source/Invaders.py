@@ -2,6 +2,7 @@ import pygame
 import sys
 import os
 import random
+import game_data
 from player import *
 from laser import *
 from alien import *
@@ -23,6 +24,9 @@ gameFont = pygame.font.Font(game_font_path, 28)
 #framerate clock
 clock = pygame.time.Clock()
 
+#game data object
+data = game_data.GameData(0, 1, 850, 40)
+
 #<----------Main Menu---------->
 def MainMenu():
     icon_path = os.path.join(my_path, '../Images/icon.png')
@@ -33,9 +37,10 @@ def MainMenu():
 
     title_font_path = os.path.join(my_path, "../Fonts/SPACEBAR.ttf")
     font = pygame.font.Font(title_font_path, 32)
-    clock.tick(60)
+
 
     while True:
+        clock.tick(60)
         mx, my = pygame.mouse.get_pos()
         titleText = font.render("INVADERS", 1, (255,255,255))
         buttonText= font.render("Start", 1, (0,0,0))
@@ -53,7 +58,7 @@ def MainMenu():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     if startButton.collidepoint((mx, my)):
-                        game()
+                        game(data)
 
         screen.fill((0,0,0))
         pygame.draw.rect(screen, (69, 180, 186), startButton, 0)
@@ -65,6 +70,11 @@ def MainMenu():
 def GameOver():
     title_font_path = os.path.join(my_path, "../Fonts/SPACEBAR.ttf")
     font = pygame.font.Font(title_font_path, 32)
+
+    game_over_sound_path = os.path.join(my_path, "../Sounds/Game_Over.wav")
+    game_over_sound = pygame.mixer.Sound(game_over_sound_path)
+
+    game_over_sound.play()
 
     while True:
         clock.tick(60)
@@ -86,7 +96,14 @@ def GameOver():
         pygame.display.update()
 
 #<----------GAME---------->
-def game():
+def game(data):
+    #Creating sound objects
+    laser_sound_path = os.path.join(my_path, "../Sounds/Laser_1.wav")
+    laser_sound = pygame.mixer.Sound(laser_sound_path)
+
+    explosion_sound_path = os.path.join(my_path, "../Sounds/Explosion.wav")
+    explosion_sound = pygame.mixer.Sound(explosion_sound_path)
+
     #loading player image
     spaceship_path = os.path.join(my_path, "../Images/spaceship.png")
     ssImage = pygame.image.load(spaceship_path)
@@ -117,7 +134,7 @@ def game():
     pygame.time.set_timer(RELOADED_EVENT, RELOAD_SPEED)
 
     #creating alien movement event
-    move_speed = 850
+    move_speed = data.alien_speed
     ALIEN_MOVE_EVENT = pygame.USEREVENT + 2
     pygame.time.set_timer(ALIEN_MOVE_EVENT, move_speed)
 
@@ -144,14 +161,17 @@ def game():
     #initializing all aliens
     for i in range(aliensInRow):
         for j in range(numRows):
-            aliens.append(Alien(64, 64, (70 * i+1), (64 * j)+40))
+            aliens.append(Alien(64, 64, (70 * i+1), (64 * j)+data.alien_y))
 
 
     #<----------GAMEPLAY FUNCTIONS---------->
     #image draw
     def redrawGameWindow():
-        scoreText = gameFont.render("Score: "+ str(score), 1, (255,255,255))
+        scoreText = gameFont.render("Score: "+ str(data.score), 1, (255,255,255))
+        levelText = gameFont.render("Level: "+ str(data.curr_level), 1, (255, 255, 255))
+
         screen.blit(scoreText, (480, 10))
+        screen.blit(levelText, (10, 10))
 
         mainPlayer.draw(screen, ssImage)
 
@@ -164,7 +184,7 @@ def game():
         for laser in alienLasers:
             laser.draw(screen, laserImg)
 
-            
+
     def playerDestory():
         #checking for alien-player collision
         for alien in aliens:
@@ -176,7 +196,6 @@ def game():
     #<----------GAMEPLAY VARIABLES---------->
     run = True
     movingRight = True #alien movement direction
-    score = 0
     animCount = 0
     explosion = False
     playerLasers = []
@@ -201,7 +220,7 @@ def game():
                 sys.exit()
             #player reload event
             if event.type == RELOADED_EVENT:
-                mainPlayer.shoot(keys, playerLasers)
+                mainPlayer.shoot(keys, playerLasers, laser_sound)
 
             #Alien movement
             if event.type == ALIEN_MOVE_EVENT:
@@ -234,9 +253,10 @@ def game():
             if event.type == ALIEN_SHOOT_EVENT:
                 if len(aliens) > 0:
                     choice = random.randint(0, len(aliens)-1)
-                    aliens[choice].shoot(alienLasers)
+                    aliens[choice].shoot(alienLasers, laser_sound)
 
         if playerDestory():
+            explosion_sound.play()
             run = False
             GameOver()
 
@@ -246,7 +266,8 @@ def game():
             for alien in aliens:
                 if (laser.hitbox[1]) < (alien.hitbox[1] + alien.hitbox[3]) and (laser.hitbox[1] + laser.hitbox[3]) > alien.hitbox[1]:
                     if (laser.hitbox[0] - laser.hitbox[2]) < (alien.hitbox[0] + alien.hitbox[2]) and (laser.hitbox[0] + laser.hitbox[2]) > alien.hitbox[0]:
-                        score += 100
+                        explosion_sound.play()
+                        data.score += 100
                         tempX, tempY = alien.x, alien.y
                         aliens.pop(aliens.index(alien))
 
@@ -267,6 +288,7 @@ def game():
             #checking if player has been hit
             if (laser.hitbox[1] < mainPlayer.hitbox[1] + mainPlayer.hitbox[3]) and (laser.hitbox[1] + laser.hitbox[3] > mainPlayer.hitbox[1]):
                 if (laser.hitbox[0] - laser.hitbox[2] < mainPlayer.hitbox[0] + mainPlayer.hitbox[2]) and (laser.hitbox[0] + laser.hitbox[2] > mainPlayer.hitbox[0]):
+                    explosion_sound.play()
                     run = False
                     GameOver()
 
@@ -286,6 +308,14 @@ def game():
         if explosion:
             screen.blit(explosionImg[animCount//8], (tempX, tempY))
             animCount += 1
+
+        #player wins level, start new level.
+        if len(aliens) <= 0 and data.curr_level <= 10:
+            data.curr_level += 1
+            data.alien_y += 5
+            data.alien_speed -= 5
+            game(data)
+
 
         redrawGameWindow()
 
