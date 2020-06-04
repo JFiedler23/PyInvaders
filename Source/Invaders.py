@@ -21,6 +21,9 @@ pygame.display.set_caption("Invaders!")
 game_font_path = os.path.join(my_path, '../Fonts/Atari.ttf')
 gameFont = pygame.font.Font(game_font_path, 28)
 
+title_font_path = os.path.join(my_path, "../Fonts/SPACEBAR.ttf")
+title_font = pygame.font.Font(title_font_path, 32)
+
 #framerate clock
 clock = pygame.time.Clock()
 
@@ -33,17 +36,16 @@ def MainMenu():
     icon = pygame.image.load(icon_path)
     pygame.display.set_icon(icon)
 
-    startButton = pygame.Rect(190, 200, 256, 64)
-
-    title_font_path = os.path.join(my_path, "../Fonts/SPACEBAR.ttf")
-    font = pygame.font.Font(title_font_path, 32)
-
+    startButton = pygame.Rect(190, 140, 256, 64)
+    high_score_button = pygame.Rect(190, 224, 256, 64)
 
     while True:
-        clock.tick(60)
+        clock.tick(56)
         mx, my = pygame.mouse.get_pos()
-        titleText = font.render("INVADERS", 1, (255,255,255))
-        buttonText= font.render("Start", 1, (0,0,0))
+
+        title_text = title_font.render("INVADERS", 1, (255,255,255))
+        startButtonText = title_font.render("Start", 1, (0,0,0))
+        high_score_button_text = title_font.render("Scores", 1, (0,0,0))
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -59,17 +61,20 @@ def MainMenu():
                 if event.button == 1:
                     if startButton.collidepoint((mx, my)):
                         game(data)
+                    elif high_score_button.collidepoint((mx, my)):
+                        DisplayHighScores()
 
         screen.fill((0,0,0))
         pygame.draw.rect(screen, (69, 180, 186), startButton, 0)
-        screen.blit(titleText, (210, 20))
-        screen.blit(buttonText, (250, 210))
+        pygame.draw.rect(screen, (69, 180, 186), high_score_button, 0)
+        screen.blit(title_text, (210, 20))
+        screen.blit(startButtonText, (250, 150))
+        screen.blit(high_score_button_text, (235, 235))
         pygame.display.update()
 
 #<----------GAME OVER SCREEN---------->
 def GameOver():
-    title_font_path = os.path.join(my_path, "../Fonts/SPACEBAR.ttf")
-    font = pygame.font.Font(title_font_path, 32)
+    SaveHighScores(data.score)
 
     game_over_sound_path = os.path.join(my_path, "../Sounds/Game_Over.wav")
     game_over_sound = pygame.mixer.Sound(game_over_sound_path)
@@ -79,7 +84,7 @@ def GameOver():
     while True:
         clock.tick(60)
 
-        gameOverText = font.render("GAME OVER", 1, (255,255,255))
+        gameOverText = title_font.render("GAME OVER", 1, (255,255,255))
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -88,11 +93,117 @@ def GameOver():
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    pygame.quit()
-                    sys.exit()
+                    MainMenu()
 
         screen.fill((0,0,0))
         screen.blit(gameOverText, (210, 20))
+        pygame.display.update()
+
+#<----------CHECKING/SAVING HIGH SCORES---------->
+def SaveHighScores(score):
+    high_scores = []
+    index = -1
+
+    #Getting current high scores list
+    with open("high_scores.txt", "r") as f:
+        high_scores_data = f.readlines()
+
+    #splitting entries between name and high score
+    for item in high_scores_data:
+        high_scores.append(item.split())
+
+    #Checking if player set a new high score
+    for i in high_scores:
+        #if so grabbing index of beaten high score
+        if score >= int(i[1]):
+            index = high_scores.index(i)
+            break
+
+    #if we have new high score
+    if index > -1:
+        name = GetPlayerName()
+        high_scores.pop()
+        new_entry = [name, str(score)]
+
+        #scores before and after index
+        top = high_scores[:index]
+        top.append(new_entry)
+        bottom = high_scores[index:]
+
+        #Creating new high scores list
+        new_high_scores = top + bottom
+
+        #writing new high scores to file
+        with open("high_scores.txt", "w") as f:
+            for i in new_high_scores:
+                entry = i[0] + " " + i[1] + "\n"
+                f.write(entry)
+
+        DisplayHighScores()
+
+#<----------HIGH SCORE SCREEN---------->
+def DisplayHighScores():
+    x, y = 225, 70
+    yIncrease = 0
+
+    title_text = title_font.render("High Scores", 0, ((255,255,255)))
+
+    #Getting current high scores list
+    with open("high_scores.txt", "r") as f:
+        high_scores_data = f.readlines()
+
+    while True:
+        clock.tick(56)
+        screen.fill((0,0,0))
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    MainMenu()
+
+        for entry in high_scores_data:
+            score_text = gameFont.render(entry[:-1], 0, ((255,255,255)))
+            screen.blit(score_text, (x, y+yIncrease))
+            yIncrease += 40
+
+        yIncrease = 0
+
+        screen.blit(title_text, (170, 20))
+        pygame.display.update()
+
+def GetPlayerName():
+    name = ""
+    #input_field = pygame.Rect(190, 140, 256, 64)
+    title_text = title_font.render("New High Score!", 0, (255,255,255))
+    input_header = gameFont.render("Enter your name: ", 0, (255,255,255))
+
+    #Getting player name
+    while True:
+        name_text = gameFont.render(name, 0, (255,255,255))
+        clock.tick(56)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    return name
+                elif event.key == pygame.K_BACKSPACE:
+                    name = name[:-1]
+                else:
+                    name += event.unicode
+
+        screen.fill((0,0,0))
+        #pygame.draw.rect(screen, (69, 180, 186), input_field, 2)
+        screen.blit(title_text, (140, 20))
+        screen.blit(input_header, (170, 150))
+        screen.blit(name_text, (395, 150))
         pygame.display.update()
 
 #<----------GAME---------->

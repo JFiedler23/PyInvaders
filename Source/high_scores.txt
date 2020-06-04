@@ -1,0 +1,10 @@
+Flynn 28800
+Halliday 25600
+Jones 22400
+Woz 19200
+Carmack 16000
+Rob 12800
+Romero 9600
+Vader 6400
+Parker 3200
+Stark 200
