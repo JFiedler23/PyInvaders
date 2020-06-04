@@ -6,5 +6,5 @@ Carmack 16000
 Rob 12800
 Romero 9600
 Vader 6400
+KLM 3500
 Parker 3200
-Stark 200

@@ -17,6 +17,10 @@ screenSize = screenWidth, screenHeight = 640, 480
 screen = pygame.display.set_mode(screenSize)
 pygame.display.set_caption("Invaders!")
 
+#colors that are used frequently
+black = (0,0,0)
+white = (255,255,255)
+
 #creating font
 game_font_path = os.path.join(my_path, '../Fonts/Atari.ttf')
 gameFont = pygame.font.Font(game_font_path, 28)
@@ -28,10 +32,15 @@ title_font = pygame.font.Font(title_font_path, 32)
 clock = pygame.time.Clock()
 
 #game data object
-data = game_data.GameData(0, 1, 850, 40)
+data = game_data.GameData()
 
 #<----------Main Menu---------->
 def MainMenu():
+    data.score = 0
+    data.curr_level = 1
+    data.alien_speed = 850
+    data.alien_y = 40
+
     icon_path = os.path.join(my_path, '../Images/icon.png')
     icon = pygame.image.load(icon_path)
     pygame.display.set_icon(icon)
@@ -43,9 +52,9 @@ def MainMenu():
         clock.tick(56)
         mx, my = pygame.mouse.get_pos()
 
-        title_text = title_font.render("INVADERS", 1, (255,255,255))
-        startButtonText = title_font.render("Start", 1, (0,0,0))
-        high_score_button_text = title_font.render("Scores", 1, (0,0,0))
+        title_text = title_font.render("INVADERS", 1, white)
+        startButtonText = title_font.render("Start", 1, black)
+        high_score_button_text = title_font.render("Scores", 1, black)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -60,11 +69,11 @@ def MainMenu():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     if startButton.collidepoint((mx, my)):
-                        game(data)
+                        HowToPlay()
                     elif high_score_button.collidepoint((mx, my)):
                         DisplayHighScores()
 
-        screen.fill((0,0,0))
+        screen.fill(black)
         pygame.draw.rect(screen, (69, 180, 186), startButton, 0)
         pygame.draw.rect(screen, (69, 180, 186), high_score_button, 0)
         screen.blit(title_text, (210, 20))
@@ -84,7 +93,7 @@ def GameOver():
     while True:
         clock.tick(60)
 
-        gameOverText = title_font.render("GAME OVER", 1, (255,255,255))
+        gameOverText = title_font.render("GAME OVER", 1, white)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -92,10 +101,10 @@ def GameOver():
                 sys.exit()
 
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
+                if event.key == pygame.K_RETURN:
                     MainMenu()
 
-        screen.fill((0,0,0))
+        screen.fill(black)
         screen.blit(gameOverText, (210, 20))
         pygame.display.update()
 
@@ -146,7 +155,7 @@ def DisplayHighScores():
     x, y = 225, 70
     yIncrease = 0
 
-    title_text = title_font.render("High Scores", 0, ((255,255,255)))
+    title_text = title_font.render("High Scores", 0, (white))
 
     #Getting current high scores list
     with open("high_scores.txt", "r") as f:
@@ -154,7 +163,7 @@ def DisplayHighScores():
 
     while True:
         clock.tick(56)
-        screen.fill((0,0,0))
+        screen.fill(black)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -162,11 +171,11 @@ def DisplayHighScores():
                 sys.exit()
 
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
+                if event.key == pygame.K_RETURN:
                     MainMenu()
 
         for entry in high_scores_data:
-            score_text = gameFont.render(entry[:-1], 0, ((255,255,255)))
+            score_text = gameFont.render(entry[:-1], 0, (white))
             screen.blit(score_text, (x, y+yIncrease))
             yIncrease += 40
 
@@ -175,15 +184,16 @@ def DisplayHighScores():
         screen.blit(title_text, (170, 20))
         pygame.display.update()
 
+#<----------NEW HIGH SCORE SCREEN---------->
 def GetPlayerName():
     name = ""
     #input_field = pygame.Rect(190, 140, 256, 64)
-    title_text = title_font.render("New High Score!", 0, (255,255,255))
-    input_header = gameFont.render("Enter your name: ", 0, (255,255,255))
+    title_text = title_font.render("New High Score!", 0, white)
+    input_header = gameFont.render("Enter your name: ", 0, white)
 
     #Getting player name
     while True:
-        name_text = gameFont.render(name, 0, (255,255,255))
+        name_text = gameFont.render(name, 0, white)
         clock.tick(56)
 
         for event in pygame.event.get():
@@ -199,11 +209,78 @@ def GetPlayerName():
                 else:
                     name += event.unicode
 
-        screen.fill((0,0,0))
+        screen.fill(black)
         #pygame.draw.rect(screen, (69, 180, 186), input_field, 2)
         screen.blit(title_text, (140, 20))
         screen.blit(input_header, (170, 150))
         screen.blit(name_text, (395, 150))
+        pygame.display.update()
+
+#<----------HOW TO PLAY SCREEN---------->
+def HowToPlay():
+    button_font = pygame.font.Font(game_font_path, 20)
+
+    title_text = gameFont.render("How to play", 1, white)
+    arrow_text = gameFont.render("Movement: ", 1, white)
+    spacebar_header_text = gameFont.render("Shoot (Hold): ", 1, white)
+    spacebar_text = button_font.render("Space", 1, white)
+    continue_text = gameFont.render("Press enter to begin...", 1, white)
+
+    arrow_key_path = os.path.join(my_path, "../Images/lr_arrow_keys.png")
+    arrow_key_img = pygame.image.load(arrow_key_path)
+
+    spacebar_path = os.path.join(my_path, "../Images/spacebar.png")
+    spacebar_img = pygame.image.load(spacebar_path)
+
+    while True:
+        clock.tick(56)
+        screen.fill(black)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    game(data)
+
+        screen.blit(title_text, (235, 10))
+        screen.blit(arrow_text, (50, 120))
+        screen.blit(spacebar_header_text, (50, 270))
+
+        screen.blit(arrow_key_img, (250, 100))
+        screen.blit(spacebar_img, (250, 250))
+        screen.blit(spacebar_text, (290, 270))
+        screen.blit(continue_text, (150, 400))
+
+        pygame.display.update()
+
+#<----------WIN SCREEN---------->
+def Win():
+    win_header = gameFont.render("Congratulations!", 1, white)
+    win_text = gameFont.render("You saved the planet from the alien invasion.", 1, white)
+    thank_you_text = gameFont.render("Thank you for playing my game.", 1, white)
+    name_text = gameFont.render("Written by JJ Fiedler", 1, white)
+
+
+    while True:
+        screen.fill(black)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    MainMenu()
+
+        screen.blit(win_header, (210, 100))
+        screen.blit(win_text, (5, 150))
+        screen.blit(thank_you_text, (120, 200))
+        screen.blit(name_text, (180, 250))
+
         pygame.display.update()
 
 #<----------GAME---------->
@@ -278,7 +355,7 @@ def game(data):
     #<----------GAMEPLAY FUNCTIONS---------->
     #image draw
     def redrawGameWindow():
-        scoreText = gameFont.render("Score: "+ str(data.score), 1, (255,255,255))
+        scoreText = gameFont.render("Score: "+ str(data.score), 1, white)
         levelText = gameFont.render("Level: "+ str(data.curr_level), 1, (255, 255, 255))
 
         screen.blit(scoreText, (480, 10))
@@ -315,7 +392,7 @@ def game(data):
 
     #<----------GAME LOOP---------->
     while run:
-        screen.fill((0,0,0))
+        screen.fill(black)
 
         largestX = 0
         smallestX = 1000
@@ -426,7 +503,8 @@ def game(data):
             data.alien_y += 5
             data.alien_speed -= 5
             game(data)
-
+        elif data.curr_level > 10:
+            Win()
 
         redrawGameWindow()
 
