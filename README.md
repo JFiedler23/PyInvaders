@@ -1,5 +1,6 @@
 # PyInvaders
 A Space Invaders clone written in Python using Pygame.
+![alt text](https://github.com/JFiedler23/PyInvaders/blob/master/Images/Screenshot.png?raw=true)
 
 ## Getting Started
 
